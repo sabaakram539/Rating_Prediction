@@ -1,0 +1,447 @@
+---
+title: "Prediction"
+author: "By Saba Akram"
+date: "7/4/2021"
+output: html_document
+---
+
+In this project I am going to take the cereals dataset and apply the "Regression Model" on it to predict the "Ratings"(which will be my target variable) based on the nutrients given in the variables. Let's import the dataset.
+
+# Importing the Dataset
+
+```{r}
+
+cereals <- read.csv("D:/M.Sc BFA/Sem 3/Data Analytic and Machine learning/Data Mining and Predictive Analysis/Data sets/cereals.CSV", stringsAsFactors=TRUE)
+head(cereals)
+dim(cereals)
+
+```
+
++ We see that there are 77 rows and 23 columns in the above dataset.
+
+# Getting to know the columns
+
+```{r}
+
+colnames(cereals)
+
+```
+
+Apart from name, we see that Calories, Protein, Fat, Sodium, Fiber, Cargo, Sugars, Potass, Vitamins, Weights, cups are continuous variables; Shelf is the categorical variable. Also we see that Name, Manuf, Type, Cold, Nabisco, Quaker, Kellogs, GeneralMills, Ralston and AHFP are not required to build the model. Therefore, Let's remove these columns.
+
+
+```{r}
+
+cereals<-cereals[,-c(1,2,3,17:23)]
+colnames(cereals)
+
+```
+
+
+# Checking Missing Values
+
+```{r}
+
+which(is.na(cereals$Fat))
+which(is.na(cereals$Sodium))
+which(is.na(cereals$Fiber))
+which(is.na(cereals$Carbo))
+which(is.na(cereals$Sugars))
+which(is.na(cereals$Potass))
+which(is.na(cereals$Vitamins))
+which(is.na(cereals$Shelf))
+which(is.na(cereals$Weight))
+which(is.na(cereals$Cups))
+which(is.na(cereals$Rating))
+
+
+```
+After checking for missing values for each columns separately, we get that 58th record of the carbo and sugar is missing and 5th and 21st record of potass is missing. Let's remove them.
+
+
+
+```{r}
+
+cereals<-cereals[-c(5,21,58),]
+
+```
+
+# Creating Indicator Variables
+
+```{r}
+
+cereals$Shelf1<-ifelse(cereals$Shelf==1,1,0)
+cereals$shelf2<-ifelse(cereals$Shelf==2,1,0)
+
+
+```
+
+Now we have all the required variables ready. I am going to use the forward selection method for predicting the ratings of the cereals dataset.
+
+# Forward Selection Procedure
+
++ Step 1. It starts with no variables in the model.
++ Step 2. Most highly correlated predictor with the target variable is entered into the model. If the resulting model is significant, then move forward otherwise report that no variables are important predictors.
++ Step 3. For each remaining variables compute sequential F-Statistic for that variable, given the variables already in the model. For example in the first pass through the algorithm, these sequential F-Statistic would be F(x2|x1),F(x3|x1), F(x4|x1) and so on. On the second pass through the algorithm, these might be F(x3|x1,x2), F(x4|x1,x2),F(x5|x1,x2) and so on and so on. The variable with the largest sequential F-Statistic is selected.
++ Step 4. For the variable selected in earlier step, test for the significance of the Sequential F-Statistic. If significant, then again perform step 3, otherwise stop and report the current model.
+
+
+# Finding the predictor most highly correlated with the Response variable "Rating".
+
+```{r}
+
+cereals_predictors<-cereals[,-13]
+colnames(cereals_predictors)
+cor(cereals$Rating,cereals_predictors)
+
+```
+We see that Sugar is most highly correlated with the Ratings with -0.7550712. The negative sign indicated the relation is inverse. Let's start working on the model building.
+
+
+# Building Linear Model
+
+```{r}
+reg1<-lm(cereals$Rating~cereals$Sugars)
+summary(reg1)
+anova(reg1)
+
+```
+
++ Though R-Square is little less i.e 0.5715, but as we can see we have a very high value of F-statistic of 96.02 and a very low p-value with standard error of 9.25 indicating that sugar is important in predicting the Rating of the cereal. 
+
+# Plotting the Regression line.
+
+```{r}
+
+plot(cereals$Sugars,cereals$Rating,main = "Cereal Rating by Sugar Content",xlab = "Sugar Content",ylab = "Rating",pch=16,col="blue")
+abline(reg1,col="red")
+
+```
+
+# First Sequential F-Statistic all the remaining variables.
+
+```{r}
+
+F1<-lm(cereals$Rating~cereals$Sugars+cereals$Calories)
+summary(F1)
+F2<-lm(cereals$Rating~cereals$Sugars+cereals$Protein)
+summary(F2)
+F3<-lm(cereals$Rating~cereals$Sugars+cereals$Fat)
+summary(F3)
+F4<-lm(cereals$Rating~cereals$Sugars+cereals$Sodium)
+summary(F4)
+F5<-lm(cereals$Rating~cereals$Sugars+cereals$Fiber)
+summary(F5)
+F6<-lm(cereals$Rating~cereals$Sugars+cereals$Carbo)
+summary(F6)
+F7<-lm(cereals$Rating~cereals$Sugars+cereals$Potass)
+summary(F7)
+F8<-lm(cereals$Rating~cereals$Sugars+cereals$Vitamins)
+summary(F8)
+F9<-lm(cereals$Rating~cereals$Sugars+cereals$Weight)
+summary(F9)
+F10<-lm(cereals$Rating~cereals$Sugars+cereals$Cups)
+summary(F10)
+F11<-lm(cereals$Rating~cereals$Sugars+cereals$Shelf1)
+summary(F11)
+F12<-lm(cereals$Rating~cereals$Sugars+cereals$shelf2)
+summary(F12)
+
+
+
+```
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable fiber has the highest Sequential F-Statistic of 157.9 with coefficient 2.8996 and a p-value of 0. Also the Standard error decreased to 6.096. Hence this variable is significant.
+
+```{r}
+
+reg2<-lm(cereals$Rating~cereals$Sugars+cereals$Fiber)
+summary(reg2)
+anova(reg2)
+
+```
+The R Square jumped to 0.8165 and also as we can see we have a very high value of F-statistic of 157.9 and a p-value of 0 with decreased standard error of 6.096 indicating that sugar and fiber are important in predicting the Rating of the cereals.
+
+# Plotting the scatter plot
+
+```{r}
+library(scatterplot3d)
+rg<-colorRampPalette(c("red","green"))(74)
+sp<-scatterplot3d(z=sort(cereals$Rating),y=cereals$Sugars,x=cereals$Fiber,color=rg,pch=16,xlab="Fiber",ylab="Sugar",zlab="Rating",main="3D ScatterPlot")
+
+```
+
+
+# Second Sequential F-Statistic all the remaining variables.
+
+```{r}
+
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Protein)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Fat)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Carbo)
+summary(F5)
+F6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Potass)
+summary(F6)
+F7=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Vitamins)
+summary(F7)
+F8=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Weight)
+summary(F8)
+F9=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Cups)
+summary(F9)
+F10=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Shelf1)
+summary(F10)
+F11=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$shelf2)
+summary(F11)
+
+
+```
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable Sodium has the highest Sequential F-Statistic of 272 with coefficient -0.054974 and a p-value of 0. Also Standard error decreased to 4.028 Hence this variable is significant.
+
+```{r}
+reg3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium)
+summary(reg3)
+(reg3)
+
+```
+The R Square jumped to 0.921 and also as we can see we have a very high value of F-statistic of 272 and a p-value of 0 with decreased standard error of 4.028 indicating that sugar, fiber and sodium are important in predicting the Rating of the cereals.
+
+# Third Sequential F-Statistic all the remaining variables.
+
+```{r}
+
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Protein)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Carbo)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Potass)
+summary(F5)
+F6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Vitamins)
+summary(F6)
+F7=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Weight)
+summary(F7)
+F8=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Cups)
+summary(F8)
+F9=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Shelf1)
+summary(F9)
+F10=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$shelf2)
+summary(F10)
+
+
+
+
+```
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable Fat has the highest Sequential F-Statistic of 628.6 with coefficient -3.333937 and a p-value of 0. Also Standard error decreased to 2.359 Hence this variable is significant.
+
+
+
+```{r}
+
+reg4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat)
+summary(reg4)
+anova(reg4)
+
+```
+
+The R Square jumped to 0.9733 and also as we can see we have a very high value of F-statistic of 628.6  and a p-value of 0 with decreased standard error of 2.359 indicating that sugar, fiber, sodium and fat are important in predicting the Rating of the cereals.
+
+# Fourth Sequential F-Statistic all the remaining variables.
+
+
+```{r}
+
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Carbo)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Potass)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Vitamins)
+summary(F5)
+F6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Weight)
+summary(F6)
+F7=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Cups)
+summary(F7)
+F8=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Shelf1)
+summary(F8)
+F9=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$shelf2)
+summary(F9)
+
+```
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable Protein has the highest Sequential F-Statistic of 1079 with a p-value of 0. Also Standard error decreased to 1.622 Hence this variable is significant.
+
+```{r}
+
+reg5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein)
+summary(reg5)
+anova(reg5)
+
+```
+
+The R Square jumped to 0.9876 and also as we can see we have a very high value of F-statistic of 1079  and a p-value of 0 with decreased standard error of 1.622 indicating that sugar, fiber, sodium, fat and protein are important in predicting the Rating of the cereals.
+
+# Fifth Sequential F-Statistic all the remaining variables.
+
+```{r}
+
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Carbo)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Potass)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Weight)
+summary(F5)
+F6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Cups)
+summary(F6)
+F7=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Shelf1)
+summary(F7)
+F8=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$shelf2)
+summary(F8)
+
+
+```
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable Vitamins has the highest Sequential F-Statistic of 1445 with a p-value of 0. Also Standard error decreased to 1.292 Hence this variable is significant.
+
+```{r}
+
+reg6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins)
+summary(reg6)
+
+```
+
+The R Square jumped to 0.9922 and also as we can see we have a very high value of F-statistic of 1425  and a p-value of 0 with decreased standard error of 1.292 indicating that sugar, fiber, sodium, fat, protein and vitamins are important in predicting the Rating of the cereals.
+
+
+# Sixth Sequential F-Statistic all the remaining variables.
+
+
+```{r}
+
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Carbo)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Weight)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Cups)
+summary(F5)
+F6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Shelf1)
+summary(F6)
+F7=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$shelf2 )
+summary(F7)
+
+
+```
+
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable Potass has the highest Sequential F-Statistic of 1449 with a p-value of 0. Also Standard error decreased to 1.187 Hence this variable is significant.
+
+```{r}
+
+reg7=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass)
+summary(reg7)
+anova(reg7)
+
+```
+
+The R Square jumped to 0.9935 and also as we can see we have a very high value of F-statistic of 1449  and a p-value of 0 with decreased standard error of 1.187 indicating that sugar, fiber, sodium, fat, protein, vitamins and Potass are important in predicting the Rating of the cereals.
+
+# Seventh Sequential F-Statistic all the remaining variables.
+
+```{r}
+
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Weight)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Cups)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Shelf1)
+summary(F5)
+F6=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$shelf2)
+summary(F6)
+
+```
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable carbo has the highest Sequential F-Statistic of 1398 with a p-value of 0. Also Standard error decreased to 1.13 Hence this variable is significant.
+
+```{r}
+reg8=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo)
+summary(reg8)
+anova(reg8)
+
+```
+
+
+We also observe that R Sq has crossed 99%. Also the speed of change decreased continuously as the number of variables increased. But we also noticed that P value of carbo has increased slightly. 
+
+# Eighth Sequential F-Statistic all the remaining variables.
+
+
+```{r}
+F1=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo+cereals$Calories)
+summary(F1)
+F2=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo+cereals$Weight)
+summary(F2)
+F3=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo+cereals$Cups)
+summary(F3)
+F4=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo+cereals$Shelf1)
+summary(F4)
+F5=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo+cereals$shelf2)
+summary(F5)
+
+```
+
+After checking the summary of each of the remaining variables and observing the Sequential F-Statistic, we get the variable carbo has the highest Sequential F-Statistic of 1316 with a p-value of 0. Also Standard error decreased to 1.099 but as we observe the Linear Regression Regrerssion including this variable we see that this variable is not significant because its individual P- value is 0.032610  making it not significant. Therefore our previous linear Equation is the Final Regression Equation.
+
+# Final Regression Model
+
+
+```{r}
+
+reg8=lm(cereals$Rating~cereals$Sugars+cereals$Fiber+cereals$Sodium+cereals$Fat+cereals$Protein+cereals$Vitamins+cereals$Potass+cereals$Carbo)
+reg8
+summary(reg8)
+anova(reg8)
+
+```
+
+
+Let's check another method i.e. stepwise selection method
+
+# Stepwise Selection Method
+
+```{r}
+
+library(rms)
+reg_step<-ols(Rating~Calories+Protein+Fat+Sodium+Fiber+Carbo+Sugars+Potass+Vitamins+Weight+Cups+Shelf1+shelf2,data = cereals)
+stepS<-fastbw(reg_step,rule="p")
+stepS
+
+```
+
+Here we see that one more variable i.e calories is useful in predicting the Rating of the Cereal. This is because The stepwise selection method has one advantage over the Forward Selection Method.
+
+The Stepwise procedure represents a modification of the forward selection procedure. A variable that has entered into the model early in the forward selection process may turn out to be non-significant, once other variables have entered into the model.
+ 
